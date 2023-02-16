@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Window U</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        iframe {
+            width: 100%;
+            height: 600px;
+        }
+
+        h1 {
+            color: #ad3d3d;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .container>div {
+            flex: 1;
+        }
+
+        .log-item {
+            font-size: 12px;
+            padding: 2px;
+            font-family: monospace;
+        }
+
+        .log-item-content {
+            font-weight: 600;
+            font-family: system-ui;
+            background: #f1f1f1;
+            padding: 0 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            <h1>Window U</h1>
+            <button onclick="sendMessageToB('Hello')"> Send "Hello" to Window B </button>
+            <div id="message-log">
+                <h4>Message Log:</h4>
+            </div>
+        </div>
+        <div>
+            <iframe id="window-b-iframe"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const WINDOW_U_URL = 'http://localhost:8003';
+        const WINDOW_B_URL = 'http://localhost:8002';
+        const windowU = window;
+
+        let windowB;
+        let windowBIframe;
+
+        let messageLogElement;
+        setWindowBIframe()
+        setMessageEventListner()
+
+        function setWindowBIframe() {
+            windowBIframe = document.getElementById("window-b-iframe")
+            windowBIframe.src = WINDOW_B_URL;
+
+            windowBIframe.onload = () => {
+                windowB = windowBIframe.contentWindow;
+            }
+
+            windowBIframe.onerror = (event) => {
+                console.log('ERROR')
+                console.log(event)
+            }
+        }
+
+        function sendMessageToB(content) {
+            addToMessageLog(sendedMessageLogText(content))
+            windowB.postMessage({ content }, WINDOW_B_URL);
+        }
+
+        function setMessageEventListner() {
+            windowU.addEventListener('message', (event) => {
+                const safeSource = event.origin === WINDOW_B_URL
+                if (!safeSource) {
+                    addToMessageLog(receivedUnsafeMessageLogText())
+                    return
+                }
+
+                const messageContent = event.data.content
+                addToMessageLog(receivedMessageLogText(messageContent))
+            })
+        }
+
+        function sendedMessageLogText(message) {
+            return `🡹 Window U sended a message to Window B saying: <span class="log-item-content">${message}</span>`
+        }
+
+        function receivedMessageLogText(message) {
+            return `🡻 Window U received a message from Window B saying: <span class="log-item-content">${message}</span>`
+        }
+
+        function receivedUnsafeMessageLogText() {
+            return `🡻 Window U received a message from an Unkown Source. <span class="log-item-content">Message will be ignored.</span>`
+        }
+
+        function addToMessageLog(message) {
+            messageLogElement = messageLogElement ?? document.getElementById('message-log');
+            if (messageLogElement) {
+                const newLogElement = document.createElement('p');
+                newLogElement.classList.add('log-item');
+                newLogElement.innerHTML = message;
+                messageLogElement.appendChild(newLogElement);
+            }
+        }
+    </script>
+</body>
+
+</html>

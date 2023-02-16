@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Window B</title>
+    <script>
+
+    </script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        h1 {
+            color: #0a8f1a;
+        }
+
+        .log-item {
+            font-size: 12px;
+            padding: 2px;
+            font-family: monospace;
+        }
+
+        .log-item-content {
+            font-weight: 600;
+            font-family: system-ui;
+            background: #f1f1f1;
+            padding: 0 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Window B</h1>
+    <button onclick="sendMessageToA('Bye Bye')"> Send "Bye Bye" to Window B </button>
+    <div id="message-log">
+        <h4>Message Log:</h4>
+    </div>
+
+    <script>
+        const WINDOW_A_URL = 'http://localhost:8001';
+        const WINDOW_B_URL = 'http://localhost:8002';
+        const windowB = window;
+        let messageLogElement;
+
+        setMessageEventListner()
+
+        function setMessageEventListner() {
+            windowB.addEventListener('message', (event) => {
+                const safeSource = event.origin === WINDOW_A_URL
+
+                if (!safeSource) {
+                    addToMessageLog(receivedUnsafeMessageLogText())
+                    return
+                }
+
+                messageContent = event.data.content
+
+                addToMessageLog(receivedMessageLogText(messageContent))
+                acknowledgeMessage(messageContent)
+            })
+        }
+
+        function sendMessageToA(content) {
+            const windowBParent = windowB.parent;
+            addToMessageLog(sendedMessageLogText(content))
+            windowBParent.postMessage({ content }, WINDOW_A_URL);
+        }
+
+        function acknowledgeMessage(content) {
+            sendMessageToA(`"${content}" received with success!`)
+        }
+
+        function sendedMessageLogText(message) {
+            return `🡹 Window B sended a message to Window A saying: <span class="log-item-content">${message}</span>`
+        }
+
+        function receivedMessageLogText(message) {
+            return `🡻 Window B received a message from Window A saying: <span class="log-item-content">${message}</span>`
+        }
+
+        function receivedUnsafeMessageLogText() {
+            return `🡻 Window B received a message from an Unkown Source. <span class="log-item-content">Message will be ignored.</span>`
+        }
+
+        function addToMessageLog(message) {
+            messageLogElement = messageLogElement ?? document.getElementById('message-log');
+            if (messageLogElement) {
+                const newLogElement = document.createElement('p');
+                newLogElement.classList.add('log-item');
+                newLogElement.innerHTML = message;
+                messageLogElement.appendChild(newLogElement);
+            }
+        }
+    </script>
+</body>
+
+</html>
